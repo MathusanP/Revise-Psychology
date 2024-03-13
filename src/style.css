@@ -1,10 +1,11 @@
 body {
     --color-primary: #93deed;
-    --color-primary-dark: #0370ff;
+    --color-primary-dark: #408e9c;
     --color-secondary: #0331ff;
     --color-error: #ff0000;
     --color-success: #00ff04;
     --border-radius: 4px;
+    --color-primary-light: #72adb8;
 
     margin: 0;
     height: 100vh;
@@ -32,6 +33,9 @@ body {
     font: 500 1rem 'Quicksand', sans-serif;
 }
 
+.form--hidden {
+    display: none;
+}
 .form > *:first-child {
     margin-top: 0;
 }
@@ -100,9 +104,27 @@ body {
     border-radius: var(--border-radius);
     outline: none;
     cursor: pointer;
-    background: var(--color-primary)
+    background: var(--color-primary-light)
 }
 
 .form__button:hover {
     background: var(--color-primary-dark);
+}
+
+.form__button:active {
+    transform: scale(0.98);
+}
+
+.form__text {
+    text-align: center;
+}
+
+.form__link {
+    color: var(--color-secondary);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.form__link:hover {
+    text-decoration: underline;
 }
