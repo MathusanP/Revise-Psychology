@@ -16,11 +16,9 @@ function clearInputError(inputElement) {
     inputElement.parentElement.querySelector(".form__input-error-message").textContent = "";
 }
 
-function isValidEmail(email) {
-    // Simple regex for basic email validation
-    const regex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-    return regex.test(email);
-
+const isValidEmail = email => {
+    const regex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return regex.test(String(email).toLowerCase());
 }
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.querySelector("#login");
@@ -44,20 +42,21 @@ document.addEventListener("DOMContentLoaded", () => {
         setFormMessage(loginForm, "error", "Invalid credentials.");
     });
 
-    inputElement.addEventListener("input", e => {
-        e,preventDefault();
-        if (e.target.type === "email") {
-            // Clear error if email is now valid or the field is empty (to allow starting over)
-            if (isValidEmail(e.target.value) || e.target.value === "") {
-                clearInputError(inputElement);
-            } else {
-                // Optionally, you could re-validate and show the error message with each keystroke
-                setInputError(inputElement, "Please enter a valid email address.");
-            }
-        } else {
-            // For non-email inputs, just clear the error
+    // Loop through each input element and attach event listener
+    loginForm.querySelectorAll(".form__input").forEach(inputElement => {
+        inputElement.addEventListener("input", e => {
             e.preventDefault();
-            clearInputError(inputElement);
-        }
+            if (inputElement.type === "email") {
+                // Clear error if email is now valid or the field is empty (to allow starting over)
+                if (isValidEmail(inputElement.value) || inputElement.value === "") {
+                    clearInputError(inputElement);
+                } else {
+                    setInputError(inputElement, "Please enter a valid email address.");
+                }
+            } else {
+                // For non-email inputs, just clear the error
+                clearInputError(inputElement);
+            }
+        });
     });
 });
