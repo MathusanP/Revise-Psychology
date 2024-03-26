@@ -1,3 +1,8 @@
+var emailValidation = "fail";
+var nickValidation = "fail";
+var passwordValidation = "fail";
+var isConfirmed = false;
+
 function setFormMessage(formElement, type, message) {
     const messageElement = formElement.querySelector(".form__message");
 
@@ -10,6 +15,7 @@ function setInputError(inputElement, message) {
     inputElement.classList.add("form__input--error");
     inputElement.parentElement.querySelector(".form__input-error-message").textContent = message;
 }
+
 // Runs when the document has been loaded.
 function clearInputError(inputElement) {
     inputElement.classList.remove("form__input--error");
@@ -17,9 +23,10 @@ function clearInputError(inputElement) {
 }
 
 const isValidEmail = email => {
-    const regex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(String(email).toLowerCase());
 }
+
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.querySelector("#login");
     const createAccountForm = document.querySelector("#createAccount");
@@ -42,21 +49,24 @@ document.addEventListener("DOMContentLoaded", () => {
         setFormMessage(loginForm, "error", "Invalid credentials.");
     });
 
-    // Loop through each input element and attach event listener
-    loginForm.querySelectorAll(".form__input").forEach(inputElement => {
-        inputElement.addEventListener("input", e => {
-            e.preventDefault();
-            if (inputElement.type === "email") {
-                // Clear error if email is now valid or the field is empty (to allow starting over)
-                if (isValidEmail(inputElement.value) || inputElement.value === "") {
-                    clearInputError(inputElement);
-                } else {
-                    setInputError(inputElement, "Please enter a valid email address.");
-                }
+    document.querySelectorAll(".form__input").forEach(inputElement => {
+        inputElement.addEventListener("blur", e => {
+            if (e.target.id === "signupEmail" && e.target.value.length > 0 && e.target.value.length < 10 || e.target.value == "") {
+                setInputError(inputElement, "Email must be at least 10 characters in length");
+                emailValidation = "fail";
             } else {
-                // For non-email inputs, just clear the error
-                clearInputError(inputElement);
+                emailValidation = "pass";
             }
         });
+
+        inputElement.addEventListener("input", e => {
+            clearInputError(inputElement);
+        });
+    });
+
+    const continueButton = document.querySelector("#continueButton");
+    continueButton.addEventListener("click", e => {
+        e.preventDefault();
+        console.log(emailValidation); // Log the value of emailValidation when the continue button is clicked
     });
 });
