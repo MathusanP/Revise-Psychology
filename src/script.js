@@ -1,3 +1,4 @@
+// Defining Validation Conditions
 var emailValidation = "fail";
 var nickValidation = "fail";
 var passwordValidation = "fail";
@@ -48,21 +49,43 @@ document.addEventListener("DOMContentLoaded", () => {
         // Example placeholder for specific logic
         setFormMessage(loginForm, "error", "Invalid credentials.");
     });
+    // Selecting nickname.
+    const nickname = document.querySelector("#nickname");
 
-    document.querySelectorAll(".form__input").forEach(inputElement => {
-        inputElement.addEventListener("blur", e => {
-            if (e.target.id === "signupEmail" && e.target.value.length > 0 && e.target.value.length < 10 || e.target.value == "") {
-                setInputError(inputElement, "Email must be at least 10 characters in length");
-                emailValidation = "fail";
-            } else {
-                emailValidation = "pass";
-            }
-        });
-
-        inputElement.addEventListener("input", e => {
-            clearInputError(inputElement);
-        });
+    // Attaching an event listener for when the user is not present to the input field. 
+    nickname.addEventListener("blur", e => {
+        // Validation condition
+        if (e.target.value.length > 10 || (e.target.id === "nickname" && e.target.value === "")) {
+            setInputError(nickname, "Nickname must be below 10 characters in length");
+            nickValidation = "fail";
+        } else {
+            // If validation conditions are correct, this condition is considered a pass.
+            nickValidation = "pass";
+        }
     });
+
+    // Event listener for when an input field is altered.
+    inputElement.addEventListener("input", e => {
+        // Clears the input when the user triggers this event. 
+        clearInputError(inputElement);
+    });
+
+    const signupEmail = document.querySelector("#signupEmail");
+
+    signupEmail.addEventListener("blur", e => {
+        // Get the value of the email input
+        const emailValue = signupEmail.value.trim(); // Trim whitespace from the input value
+
+        // Validation condition
+        if (emailValue === '' || !isValidEmail(emailValue)) {
+            setInputError(signupEmail, "Please enter a valid email address.");
+            emailValidation = "fail";
+        } else {
+            // If validation conditions are correct, this condition is considered a pass.
+            emailValidation = "pass";
+        }
+    });
+
 
     const continueButton = document.querySelector("#continueButton");
     continueButton.addEventListener("click", e => {
