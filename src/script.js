@@ -16,7 +16,6 @@ function setInputError(inputElement, message) {
     inputElement.classList.add("form__input--error");
     inputElement.parentElement.querySelector(".form__input-error-message").textContent = message;
 }
-
 // Runs when the document has been loaded.
 function clearInputError(inputElement) {
     inputElement.classList.remove("form__input--error");
@@ -24,8 +23,16 @@ function clearInputError(inputElement) {
 }
 
 const isValidEmail = email => {
+    // Defining the email sequence
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Returns true if input matches regex pattern.
     return regex.test(String(email).toLowerCase());
+}
+
+const isValidPassword = password => {
+    // Defining password sequence
+    const regex = /^(?=.*[A-Z])(?=.*\d)(?!.*\s).{8,}$/;
+    return regex.test(String(password));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -65,9 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Event listener for when an input field is altered.
-    inputElement.addEventListener("input", e => {
+    nickname.addEventListener("input", e => {
         // Clears the input when the user triggers this event. 
-        clearInputError(inputElement);
+        clearInputError(nickname);
     });
 
     const signupEmail = document.querySelector("#signupEmail");
@@ -87,9 +94,69 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
+    // Event listener for when an input field is altered.
+    signupEmail.addEventListener("input", e => {
+        // Clears the input when the user triggers this event. 
+        clearInputError(signupEmail);
+    });
+
+    const signupPassword = document.querySelector("#signupPassword");
+
+    signupPassword.addEventListener("blur", e => {
+        // Get the value of the password input field
+        const passwordValue = signupPassword.value.trim();
+
+        // Validation condition
+        if (passwordValue === '' || !isValidPassword(passwordValue)) {
+            setInputError(signupPassword, "Please ensure your password has 1 capital letter, no spaces, 1 number and at least 8 characters long.");
+            passwordValidation = "fail";
+        } else {
+            // If validation conditions are correct, this condition is considered a pass.
+            passwordValidation = "pass";
+        }
+    });
+
+
+    // Event listener for when an input field is altered.
+    signupPassword.addEventListener("input", e => {
+        // Clears the input when the user triggers this event. 
+        clearInputError(signupPassword);
+    });
+
+    const confirmPassword = document.querySelector("#confirmPassword");
+
+    confirmPassword.addEventListener("blur", e => {
+        // Get the value of the password input field
+        const confirmation = confirmPassword.value.trim();
+        const passwordValue = signupPassword.value.trim(); 
+
+        // Validation condition
+        if (confirmation !== passwordValue) { // Compare with passwordValue
+            setInputError(confirmPassword, "Passwords don't match.");
+            isConfirmed = false;
+        } else {
+            // If validation conditions are correct, this condition is considered a pass.
+            isConfirmed = true;
+        }
+    });
+
+    // Event listener for when an input field is altered.
+    confirmPassword.addEventListener("input", e => {
+        // Clears the input when the user triggers this event. 
+        clearInputError(confirmPassword);
+    });
+
+
     const continueButton = document.querySelector("#continueButton");
     continueButton.addEventListener("click", e => {
         e.preventDefault();
-        console.log(emailValidation); // Log the value of emailValidation when the continue button is clicked
+        // If all fields are valid...
+        if (emailValidation === "pass" && nickValidation === "pass" && passwordValidation === "pass" && isConfirmed === true) {
+            console.log('The user has passed validation.');
+        } else { 
+            // Fail condition
+            console.log('The user has failed validation.');
+        }
     });
+    
 });
