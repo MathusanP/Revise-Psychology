@@ -153,9 +153,42 @@ document.addEventListener("DOMContentLoaded", () => {
         // If all fields are valid...
         if (emailValidation === "pass" && nickValidation === "pass" && passwordValidation === "pass" && isConfirmed === true) {
             console.log('The user has passed validation.');
+            const passwordValue = signupPassword.value.trim();
+            
+            // Object containing user data.
+            const toSend = {
+                nickname: nickname.value,
+                signupEmail: signupEmail.value,
+                passwordValue: passwordValue
+            };
+
+            // Sending to server
+            fetch('http://localhost:3000/userData', {
+                method: 'POST',
+                headers: {
+                    // Specifying what sort of data is being sent
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(toSend)
+            })
+            .then(response => {
+                // If HTTP response code is in between 200 - 299...
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok');
+                
+            })
+            .then(data => {
+                console.log(data.message);
+            })
+            .catch(error => {
+                console.error(error)
+            });
+
         } else { 
             // Fail condition
-            console.log('The user has failed validation.');
+            alert('Please ensure all fields are correct before submitting.')
         }
     });
     
