@@ -4,6 +4,9 @@ var nickValidation = "fail";
 var passwordValidation = "fail";
 var isConfirmed = false;
 
+var loginEmailValidation = "fail";
+var loginPasswordValidation = "fail";
+
 function setFormMessage(formElement, type, message) {
     const messageElement = formElement.querySelector(".form__message");
 
@@ -146,7 +149,92 @@ document.addEventListener("DOMContentLoaded", () => {
         clearInputError(confirmPassword);
     });
 
+    // Login email validation:
+    const loginEmail = document.querySelector("#loginEmail")
+    loginEmail.addEventListener("blur", e => {
+        // Get the value of the email input
+        const loginEmailValue = loginEmail.value.trim(); // Trim whitespace from the input value
 
+        // Validation condition
+        if (loginEmailValue === '' || !isValidEmail(loginEmailValue)) {
+            setInputError(loginEmail, "Please enter a valid email address.");
+            loginEmailValidation = "fail";
+        } else {
+            // If validation conditions are correct, this condition is considered a pass.
+            loginEmailValidation = "pass";
+        }
+    });
+
+    loginEmail.addEventListener("input", e => {
+        clearInputError(loginEmail);
+    });
+    
+    // Login password validation:
+    const loginPassword = document.querySelector("#loginPassword");
+    loginPassword.addEventListener("blur", e => {
+        // Trimming white spaces from the password DOM element:
+        const loginPasswordValue = loginPassword.value.trim();
+
+        // Validaiton condition:
+        if (loginPasswordValue === '' || !isValidPassword(loginPasswordValue)) {
+            setInputError(loginPassword, "Please ensure your password has 1 capital letter, no spaces, 1 number and at least 8 characters long.")
+        } else {
+            loginPasswordValidation = "pass";
+        }
+    });
+
+    loginPassword.addEventListener("input", e => {
+        clearInputError(loginPassword);
+    });
+
+    // When user presses on the login's continue button
+    const loginSubmit = document.querySelector("#loginSubmit");
+    loginSubmit.addEventListener("click", e => {
+        e.preventDefault();
+        // If user has passed validation:
+        if (loginEmailValidation === "pass" && loginPasswordValidation === "pass") {
+            console.log('User has passed validation');
+            
+            const loginPasswordValue = loginPassword.value.trim();
+    
+            // Wrapping everything as an object to send to server
+            const toSend = {
+                loginEmail: loginEmail.value,
+                loginPassword: loginPasswordValue // Remove .value here, as loginPasswordValue is already a value
+            };
+    
+            fetch('http://localhost:3000/loginData', {
+                method: 'POST',
+                headers: {
+                    // Specifying what sort of data is being sent
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(toSend)
+            })
+            .then(response => {
+                // If HTTP response code is in between 200 - 299...
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok');
+                
+            })
+            .then(data => {
+                alert(data.message);
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    
+        } else { 
+            // Fail condition
+            alert('Please ensure all fields are correct before submitting.');
+        }
+    });
+    
+        
+    
+    
     const continueButton = document.querySelector("#continueButton");
     continueButton.addEventListener("click", e => {
         e.preventDefault();
@@ -180,7 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
             })
             .then(data => {
-                console.log(data.message);
+                alert(data.message);
             })
             .catch(error => {
                 console.error(error)
