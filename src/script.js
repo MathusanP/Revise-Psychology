@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     confirmPassword.addEventListener("blur", e => {
         // Get the value of the password input field
         const confirmation = confirmPassword.value.trim();
-        const passwordValue = signupPassword.value.trim(); 
+        const passwordValue = signupPassword.value.trim();
 
         // Validation condition
         if (confirmation !== passwordValue) { // Compare with passwordValue
@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loginEmail.addEventListener("input", e => {
         clearInputError(loginEmail);
     });
-    
+
     // Login password validation:
     const loginPassword = document.querySelector("#loginPassword");
     loginPassword.addEventListener("blur", e => {
@@ -194,47 +194,64 @@ document.addEventListener("DOMContentLoaded", () => {
         // If user has passed validation:
         if (loginEmailValidation === "pass" && loginPasswordValidation === "pass") {
             console.log('User has passed validation');
-            
+
             const loginPasswordValue = loginPassword.value.trim();
-    
+
             // Wrapping everything as an object to send to server
             const toSend = {
                 loginEmail: loginEmail.value,
                 loginPassword: loginPasswordValue // Remove .value here, as loginPasswordValue is already a value
             };
-    
+
             fetch('http://localhost:3000/loginData', {
                 method: 'POST',
                 headers: {
-                    // Specifying what sort of data is being sent
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(toSend)
             })
-            .then(response => {
-                // If HTTP response code is in between 200 - 299...
-                if (response.ok) {
-                    return response.json();
-                }
-                throw new Error('Network response was not ok');
-                
-            })
-            .then(data => {
-                alert(data.message);
-            })
-            .catch(error => {
-                console.error(error);
-            });
-    
-        } else { 
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Network response was not ok');
+                })
+                .then(data => {
+                    if (data.message === "Login successful") {
+                        // Make a new fetch request to navigate to /main
+                        fetch('http://localhost:3000/main', {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                            .then(mainResponse => {
+                                if (mainResponse.ok) {
+                                    // Navigate to /main.html if successful
+                                    window.location.href = 'http://localhost:3000/main';
+                                } else {
+                                    throw new Error('Failed to fetch main page');
+                                }
+                            })
+                            .catch(error => {
+                                console.error(error);
+                            });
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        } else {
             // Fail condition
             alert('Please ensure all fields are correct before submitting.');
         }
     });
-    
-        
-    
-    
+
+
+
+
     const continueButton = document.querySelector("#continueButton");
     continueButton.addEventListener("click", e => {
         e.preventDefault();
@@ -242,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (emailValidation === "pass" && nickValidation === "pass" && passwordValidation === "pass" && isConfirmed === true) {
             console.log('The user has passed validation.');
             const passwordValue = signupPassword.value.trim();
-            
+
             // Object containing user data.
             const toSend = {
                 nickname: nickname.value,
@@ -259,25 +276,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 body: JSON.stringify(toSend)
             })
-            .then(response => {
-                // If HTTP response code is in between 200 - 299...
-                if (response.ok) {
-                    return response.json();
-                }
-                throw new Error('Network response was not ok');
-                
-            })
-            .then(data => {
-                alert(data.message);
-            })
-            .catch(error => {
-                console.error(error)
-            });
+                .then(response => {
+                    // If HTTP response code is in between 200 - 299...
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Network response was not ok');
 
-        } else { 
+                })
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(error => {
+                    console.error(error)
+                });
+
+        } else {
             // Fail condition
             alert('Please ensure all fields are correct before submitting.')
         }
+
+
     });
-    
+
 });

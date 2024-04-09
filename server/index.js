@@ -1,16 +1,20 @@
-require('dotenv').config({path: 'secrets.env'});
+require('dotenv').config({ path: 'secrets.env' });
 
 const dbHost = process.env.DB_HOST;
 const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
 
 const mailUser = process.env.MAIL_USER
-const mailPass = process.env.MAIL_PASSWORD  
+const mailPass = process.env.MAIL_PASSWORD
+
+const session_key = process.env.SESSION_KEY
 
 // Client side required modules
 const express = require('express');
+const cookieSession = require('cookie-session');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const helmet = require('helmet')
 
 // Validation and sanitization modules
 const validator = require('validator');
@@ -59,6 +63,18 @@ const port = 3000;
 
 app.use(cors())
 app.use(bodyParser.json());
+
+app.use((req, res, next) => {
+  // Allow scripts only from the same origin
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  next();
+});
+// Initializing sessions:
+app.use(cookieSession({
+  name: 'session',
+  secret: session_key,
+  maxAge: 24 * 60 * 60 * 1000
+}));
 
 // Define route handler for POST requests to '/userData'
 app.post('/userData', (req, res) => {
@@ -119,24 +135,33 @@ app.post('/loginData', (req, res) => {
 
   const { loginPassword, loginEmail } = loginData
 
+  // Input Sanitization
   const sanitizedLoginEmail = validator.escape(loginEmail);
   const sanitizedLoginPassword = validator.escape(loginPassword);
 
-
-  connection.query(' SELECT hashed_password FROM users WHERE email = ? AND isVerified = TRUE', [sanitizedLoginEmail], function (error, results) {
+  // Email verification - Authentication
+  connection.query(' SELECT email, nickname, hashed_password FROM users WHERE email = ? AND isVerified = TRUE', [sanitizedLoginEmail], function (error, results) {
     if (error) throw error;
 
+    // If nothing comes up:
     if (results.length === 0) {
-      res.json({message: "Email is not recognised."})
+      res.json({ message: "Email is not recognised." })
     } else {
+      // Fetching user details:
+      const email = results[0].email
       const hashedPassword = results[0].hashed_password
+      const nickname = results[0].nickname
+
       console.log(`Checking: ${hashedPassword}`);
+      // Checking if passwords match:
       var isMatch = bcrypt.compareSync(sanitizedLoginPassword, hashedPassword);
       if (isMatch) {
-        res.json({message: "Login succesful!"})
+        // Test console log:
         console.log('Login Succesful!')
+        req.session.user = { id: email, username: nickname };
+        res.status(200).json({ message: 'Login successful' });
       } else {
-        res.json({message: "Invalid email password combination."})
+        res.json({ message: "Invalid email password combination." })
         console.log('Wrong Password')
       }
     }
@@ -144,14 +169,32 @@ app.post('/loginData', (req, res) => {
   )
 })
 
-app.use((req, res, next) => {
-  // Allow scripts only from the same origin
-  res.setHeader('Content-Security-Policy', "default-src 'self'");
-  next();
+
+// Route protection
+const redirectLogin = (req, res, next) => {
+  // If user is undefined...
+  if (!req.session) {
+    console.log('Session Expired.')
+    return res.status(401).json({ message: 'Unauthorized' });
+  } else {
+    next();
+  }
+};
+
+
+app.get('/main', redirectLogin, (req, res) => {
+  try {
+    res.sendFile(path.join(__dirname, '../src', 'main.html'));
+  } catch (error) {
+    console.error('Error sending file:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
+
+
 app.get('/verify-email', (req, res) => {
-  const token = req.query.token; 
+  const token = req.query.token;
 
   console.log('Query parameters:', req.query);
   console.log('Token:', token);
@@ -222,6 +265,8 @@ function verifyATokenAndGetUser(token, secretKey) {
     return null;
   }
 }
+
+
 // To ensure express server is running.
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
