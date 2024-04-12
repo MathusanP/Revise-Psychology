@@ -203,51 +203,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 loginPassword: loginPasswordValue // Remove .value here, as loginPasswordValue is already a value
             };
 
-            fetch('http://localhost:3000/loginData', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(toSend)
-            })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    }
-                    throw new Error('Network response was not ok');
-                })
-                .then(data => {
-                    if (data.message === "Login successful") {
-                        // Make a new fetch request to navigate to /main
-                        fetch('http://localhost:3000/main', {
-                            method: 'GET',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-                        })
-                            .then(mainResponse => {
-                                if (mainResponse.ok) {
-                                    // Navigate to /main.html if successful
-                                    window.location.href = 'http://localhost:3000/main';
-                                } else {
-                                    throw new Error('Failed to fetch main page');
-                                }
-                            })
-                            .catch(error => {
-                                console.error(error);
-                            });
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error(error);
-                });
-        } else {
-            // Fail condition
-            alert('Please ensure all fields are correct before submitting.');
-        }
-    });
+           
+        fetch('http://localhost:3000/loginData', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(toSend)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok');
+        })
+        .then(data => {
+            // If server returns a success signal:
+            if (data.message === "Login successful") {
+                // Store email and nickname locally
+                localStorage.setItem('email', data.email);
+                localStorage.setItem('nickname', data.nickname);
+
+                // Sending referral signal.
+                window.location.href = 'main.html';
+            }
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    }
+});
 
 
 
@@ -290,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 .catch(error => {
                     console.error(error)
                 });
-
+            
         } else {
             // Fail condition
             alert('Please ensure all fields are correct before submitting.')
@@ -299,4 +284,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
     });
 
-});
+})

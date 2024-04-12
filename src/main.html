@@ -4,8 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Revise Psychology</title>
+
 </head>
 <body>
-    <h1> Welcome to the main page. </h1>
+    <div>Welcome, <br> <span id="nickname"></span></div>   
+
+    <script>
+        // Fetching user variables from local storage.
+        const nickname = localStorage.getItem('nickname')
+        const email = localStorage.getItem('email')
+
+        document.getElementById('nickname').textContent = nickname;
+    </script>
 </body>
 </html>

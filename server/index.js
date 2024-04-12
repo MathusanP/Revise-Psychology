@@ -14,7 +14,7 @@ const express = require('express');
 const cookieSession = require('cookie-session');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const helmet = require('helmet')
+
 
 // Validation and sanitization modules
 const validator = require('validator');
@@ -31,6 +31,9 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const secret_key = crypto.randomBytes(32).toString('hex');
 const path = require('path');
+
+// required for session page:
+const ejs = require('ejs');
 
 // Setting up MySQL connection:
 const config = {
@@ -61,7 +64,12 @@ connection.connect(function (err) {
 const app = express();
 const port = 3000;
 
-app.use(cors())
+const corsOptions = {
+  origin: 'http://127.0.0.1:5500',
+  credentials: true
+}
+
+app.use(cors(corsOptions))
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {
@@ -75,6 +83,8 @@ app.use(cookieSession({
   secret: session_key,
   maxAge: 24 * 60 * 60 * 1000
 }));
+
+app.set('view engine', 'ejs');
 
 // Define route handler for POST requests to '/userData'
 app.post('/userData', (req, res) => {
@@ -158,8 +168,9 @@ app.post('/loginData', (req, res) => {
       if (isMatch) {
         // Test console log:
         console.log('Login Succesful!')
-        req.session.user = { id: email, username: nickname };
-        res.status(200).json({ message: 'Login successful' });
+        // Signal to client side to redirect:
+        console.log({ username: nickname, userId: email})
+        res.status(200).json({ message: 'Login successful', email: email, nickname: nickname});
       } else {
         res.json({ message: "Invalid email password combination." })
         console.log('Wrong Password')
@@ -168,30 +179,6 @@ app.post('/loginData', (req, res) => {
   }
   )
 })
-
-
-// Route protection
-const redirectLogin = (req, res, next) => {
-  // If user is undefined...
-  if (!req.session) {
-    console.log('Session Expired.')
-    return res.status(401).json({ message: 'Unauthorized' });
-  } else {
-    next();
-  }
-};
-
-
-app.get('/main', redirectLogin, (req, res) => {
-  try {
-    res.sendFile(path.join(__dirname, '../src', 'main.html'));
-  } catch (error) {
-    console.error('Error sending file:', error);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
-
 
 app.get('/verify-email', (req, res) => {
   const token = req.query.token;
@@ -249,7 +236,6 @@ function sendVerificationEmail(email, token, res) {
     res.json({ message: 'User registered successfully, Verification email has been sent.' });
   });
 }
-
 function verifyATokenAndGetUser(token, secretKey) {
   try {
     const decoded = jwt.verify(token, secretKey);
@@ -264,6 +250,7 @@ function verifyATokenAndGetUser(token, secretKey) {
     console.log('Error verifying token:', error.message);
     return null;
   }
+
 }
 
 
