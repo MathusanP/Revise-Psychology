@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+    <link rel="stylesheet" href="question.css">
+</head>
+<body>
+    <div class="quiz-container">
+        <h1 id="question-text"></h1>
+        <div class="options">
+            <!-- Buttons -->
+            <button class="option"<span id="A"></span></button>
+            <button class="option"<span id="B"></span></button>
+            <button class="option"<span id="C"></span></button>
+            <button class="option"<span id="D"></span></button>
+        </div>
+        <div id="explanation" style="display: none;"></div>
+        <button id="next-btn">Next</button>
+    </div>
+    <script>
+       // Only loads the content once the document has loaded:
+       document.addEventListener('DOMContentLoaded', function() {
+        // Parsing the JSON data from local storage:
+        const data = JSON.parse(localStorage.getItem('questionData'));
+        console.log(data);
+    if (data) {
+        // Fetching question contents:
+        document.getElementById('question-text').textContent = data.question_text;
+        document.getElementById('A').textContent = data.option_a;
+        document.getElementById('B').textContent = data.option_b;
+        document.getElementById('C').textContent = data.option_c;
+        document.getElementById('D').textContent = data.option_d;
+    }
+});
+
+
+    </script>
+
+    <script src="session.js"></script> 
+</body>
+</html>

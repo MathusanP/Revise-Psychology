@@ -5,7 +5,7 @@ const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
 
 const mailUser = process.env.MAIL_USER
-const mailPass = process.env.MAIL_PASSWORD
+const mailPass = process.env.MAIL_PASS
 
 const session_key = process.env.SESSION_KEY
 
@@ -169,8 +169,8 @@ app.post('/loginData', (req, res) => {
         // Test console log:
         console.log('Login Succesful!')
         // Signal to client side to redirect:
-        console.log({ username: nickname, userId: email})
-        res.status(200).json({ message: 'Login successful', email: email, nickname: nickname});
+        console.log({ username: nickname, userId: email })
+        res.status(200).json({ message: 'Login successful', email: email, nickname: nickname });
       } else {
         res.json({ message: "Invalid email password combination." })
         console.log('Wrong Password')
@@ -222,7 +222,7 @@ function sendVerificationEmail(email, token, res) {
     from: mailUser,
     to: email,
     subject: 'Verify your email!',
-    html: `<p> Please click on the following link to verifiy your Revise Psychology email: <a href=${verificationLink}> Verify here! </a></p`
+    html: `<p> Please click on the following link to verifiy your Revise Psychology email: <a href=${verificationLink}> Verify here! </a></p>`
   };
 
   transporter.sendMail(mailOptions, function (error, info) {
@@ -252,6 +252,126 @@ function verifyATokenAndGetUser(token, secretKey) {
   }
 
 }
+
+// Fetching user's requested topic.
+app.post('/sessionData', (req, res) => {
+  const selected_topic = req.body
+
+  // Destructuring the object:
+  const { topic } = selected_topic
+  console.log(topic)
+
+
+  // Fetching all the question ids based on the user's chosen topic:
+  connection.query(`SELECT question_id FROM question_bank WHERE question_topic = ?`, [topic], (error, results) => {
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    // Log the mapped array:
+    const question_list = results.map(row => row.question_id);
+
+    // If no questions are found
+    if (question_list.length === 0) {
+      return res.status(404).json({ error: 'No questions found for the specified topic' });
+    }
+
+    // Fetching a random position from the array:
+    const index = Math.floor(Math.random() * question_list.length);
+    // Returning the question that gets selected form the random index:
+    const question = question_list[index]
+
+    // Fetching the question using the index:
+
+    connection.query(`SELECT question_id,question_topic, question_text, option_a, option_b, option_c, option_d FROM question_bank WHERE question_id = ?`, [question], (error, results) => {
+      if (error) {
+        console.log('Database error:'. error);
+        return res.status(500).json({ error: 'Internal server error'});
+      }
+
+      // Handle incase there are no results:
+
+      if (results.length === 0) {
+        return res.status(404).json({ error: 'Question not found '});
+      }
+
+      // Extracting the values:
+
+      const questionData = results[0];
+
+      // Inserting response values into a JSON:
+      const responseData  = {
+        topic: questionData.question_topic,
+        question_id: questionData.question_id,
+        question_text: questionData.question_text,
+        option_a: questionData.option_a,
+        option_b: questionData.option_b,
+        option_c: questionData.option_c,
+        option_d: questionData.option_d,
+      };
+
+      // Test log:
+      console.log(responseData)
+      res.json(responseData);
+
+    })
+  })
+})
+
+// Correction route:
+app.post('/submitAnswer', (req, res) => {
+  const userAnswer = req.body
+
+  console.log(userAnswer);
+
+  // Fetching user selected answer:
+  const { selectedOption } = userAnswer
+  const { questionId } = userAnswer
+
+  console.log(questionId)
+  // Test log
+  console.log(selectedOption)
+
+  // Finding the correct answer from the database:
+  connection.query(`SELECT correct_answer, reason FROM question_bank WHERE question_id = ?`, [questionId], (error, results) => {
+    if (error) {
+      console.error('Database error', error);
+      return res.status(500).json({ error: 'Internal server error. '});
+    }
+
+    // If no answer is found:
+    if (results.length === 0) {
+      console.log('No answer found.');
+      return res.status(404).json({ error: 'An answer could not be found.'})
+    }
+
+    // If an answer is found:
+    const correction = results[0];
+    // If the user's answer is correct:
+    if(userAnswer == correction.correct_answer) {
+      console.log('The answer is correct!')
+      const marking = {
+        isCorrect: false,
+        correctAnswer: selectedOption,
+      }
+      
+      res.json(marking);
+    } else {
+      // If the user's answer is incorrect:
+      console.log(`User answered ${selectedOption} but the actual answer was ${correction.correct_answer} because ${correction.reason}`)
+      const marking = {
+        isCorrect: false,
+        userAnswer: selectedOption,
+        correctAnswer: correction.correct_answer,
+        reason: correction.reason
+      }
+      
+      console.log(marking);
+      res.json(marking);
+    }
+  })
+})
 
 
 // To ensure express server is running.
