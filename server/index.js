@@ -349,10 +349,10 @@ app.post('/submitAnswer', (req, res) => {
     // If an answer is found:
     const correction = results[0];
     // If the user's answer is correct:
-    if(userAnswer == correction.correct_answer) {
+    if (selectedOption.trim().toLowerCase() === correction.correct_answer.trim().toLowerCase()) {
       console.log('The answer is correct!')
       const marking = {
-        isCorrect: false,
+        isCorrect: true,
         correctAnswer: selectedOption,
       }
       

@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('explanation').style.display = 'none';
 
             // Get the selected option
-            const selectedOption = event.target.textContent.trim();
+            const selectedOption = event.target.id;
             console.log('Selected option:', selectedOption);
 
             const questionData = JSON.parse(localStorage.getItem('questionData'));
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Get the "Mark" button
+    // Get the "next" button
     const nextbtn = document.getElementById('next-btn');
 
     // Inside the 'nextbtn' event listener
