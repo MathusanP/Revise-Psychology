@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div><h2>Social Influence: <span id="socialInfluence"></span> / <span id="socialInfluenceTotal"></span></h2></div>   
+    <div><h2>Biopsychology <span id="biopsychology"></span> / <span id="biopsychologyTotal"></span></h2></div>   
+    <div><h2>Attachment <span id="attachment"></span> / <span id="attachmentTotal"></span></h2></div>   
+    <div><h2>Total <span id="total"></span></h2></div>   
+    <script>
+        // Fetching user variables from local storage.
+        const statsJson = localStorage.getItem('userStatistics')
+        const stats = JSON.parse(statsJson);
+
+        const socialInfluence = stats.socialInfluence
+        const biopsychology = stats.biopsychology
+        const attachment = stats.attachment
+        const total = stats.totalAnswered
+
+        document.getElementById('socialInfluence').textContent = socialInfluence
+        document.getElementById('biopsychology').textContent = biopsychology
+        document.getElementById('attachment').textContent = attachment
+        document.getElementById('total').textContent = total
+
+        // Set total values for each section
+        document.getElementById('socialInfluenceTotal').textContent = stats.socialInfluenceTotal;
+        document.getElementById('biopsychologyTotal').textContent = stats.biopsychologyTotal;
+        document.getElementById('attachmentTotal').textContent = stats.attachmentTotal;
+
+    </script>
+</body>
+</html>

@@ -49,16 +49,9 @@ const config = {
 };
 
 // Using mysql2 to configure a connection:
-const connection = mysql.createConnection(config);
+const pool = mysql.createPool(config);
+module.exports = pool;
 
-// Test connection
-connection.connect(function (err) {
-  if (err) {
-    console.log(`There was an error: ${err.stack}`)
-    return;
-  }
-  console.log(`Connected as: ${connection.threadId}`);
-});
 
 //Setting up Express
 const app = express();
@@ -111,7 +104,7 @@ app.post('/userData', (req, res) => {
     console.log(`User's hashed password is: ${hash}`);
 
     // Checking if the email already exists.
-    connection.query(`SELECT * FROM users WHERE email = '${sanitizedSignupEmail}'`, function (error, results) {
+    pool.query(`SELECT * FROM users WHERE email = '${sanitizedSignupEmail}'`, function (error, results) {
       if (error) throw error;
       console.log(results);
       // If the email does not exist:
@@ -123,7 +116,7 @@ app.post('/userData', (req, res) => {
         const token = jwt.sign({ email: sanitizedSignupEmail, verificationToken }, secret_key, { expiresIn: '1h' });
 
         // Inserting user details onto database:
-        connection.query(`INSERT INTO users (email, nickname, hashed_password, isVerified) VALUES (?, ?, ?, FALSE);`, [sanitizedSignupEmail, sanitizedNickname, hash], function (error, results) {
+        pool.query(`INSERT INTO users (email, nickname, hashed_password, isVerified) VALUES (?, ?, ?, FALSE);`, [sanitizedSignupEmail, sanitizedNickname, hash], function (error, results) {
           if (error) {
             console.error('Error inserting data: ', error);
             res.status(500).send('Error registering new user.');
@@ -150,7 +143,7 @@ app.post('/loginData', (req, res) => {
   const sanitizedLoginPassword = validator.escape(loginPassword);
 
   // Email verification - Authentication
-  connection.query(' SELECT email, nickname, hashed_password FROM users WHERE email = ? AND isVerified = TRUE', [sanitizedLoginEmail], function (error, results) {
+  pool.query(' SELECT email, nickname, hashed_password FROM users WHERE email = ? AND isVerified = TRUE', [sanitizedLoginEmail], function (error, results) {
     if (error) throw error;
 
     // If nothing comes up:
@@ -189,7 +182,7 @@ app.get('/verify-email', (req, res) => {
   const user = verifyATokenAndGetUser(token, secret_key);
 
   if (user) {
-    connection.query(`UPDATE users SET isVerified = TRUE WHERE email = ?`, [user.email], (error, results) => {
+    pool.query(`UPDATE users SET isVerified = TRUE WHERE email = ?`, [user.email], (error, results) => {
       if (error) {
         console.log('Error Updating the user:', error)
         res.status(500).send('Error updating the user');
@@ -263,7 +256,7 @@ app.post('/sessionData', (req, res) => {
 
 
   // Fetching all the question ids based on the user's chosen topic:
-  connection.query(`SELECT question_id FROM question_bank WHERE question_topic = ?`, [topic], (error, results) => {
+  pool.query(`SELECT question_id FROM question_bank WHERE question_topic = ?`, [topic], (error, results) => {
     if (error) {
       console.error('Database error:', error);
       return res.status(500).json({ error: 'Internal server error' });
@@ -284,7 +277,7 @@ app.post('/sessionData', (req, res) => {
 
     // Fetching the question using the index:
 
-    connection.query(`SELECT question_id,question_topic, question_text, option_a, option_b, option_c, option_d FROM question_bank WHERE question_id = ?`, [question], (error, results) => {
+    pool.query(`SELECT question_id,question_topic, question_text, option_a, option_b, option_c, option_d FROM question_bank WHERE question_id = ?`, [question], (error, results) => {
       if (error) {
         console.log('Database error:'. error);
         return res.status(500).json({ error: 'Internal server error'});
@@ -326,15 +319,16 @@ app.post('/submitAnswer', (req, res) => {
   console.log(userAnswer);
 
   // Fetching user selected answer:
-  const { selectedOption } = userAnswer
-  const { questionId } = userAnswer
+  const { selectedOption } = userAnswer;
+  const { questionId } = userAnswer;
+  const { email } = userAnswer;
 
   console.log(questionId)
   // Test log
   console.log(selectedOption)
 
   // Finding the correct answer from the database:
-  connection.query(`SELECT correct_answer, reason FROM question_bank WHERE question_id = ?`, [questionId], (error, results) => {
+  pool.query(`SELECT correct_answer, question_topic, reason FROM question_bank WHERE question_id = ?`, [questionId], (error, results) => {
     if (error) {
       console.error('Database error', error);
       return res.status(500).json({ error: 'Internal server error. '});
@@ -348,6 +342,9 @@ app.post('/submitAnswer', (req, res) => {
 
     // If an answer is found:
     const correction = results[0];
+    const incrementTopic = correction.question_topic
+    console.log(incrementTopic)
+    
     // If the user's answer is correct:
     if (selectedOption.trim().toLowerCase() === correction.correct_answer.trim().toLowerCase()) {
       console.log('The answer is correct!')
@@ -355,10 +352,35 @@ app.post('/submitAnswer', (req, res) => {
         isCorrect: true,
         correctAnswer: selectedOption,
       }
+      // Updating user statistics:
+      pool.query(`UPDATE statistic SET total = total + 1 where email = ?`, [email], (error, results) => {
+        if (error) {
+          console.error('Database error:', error);
+          return;
+        }
+        console.log('Update successful:', results);
+      });
+
       
+      // Adding a correct answer to a topic
+      pool.query(`UPDATE statistic SET \`${incrementTopic}\` = \`${incrementTopic}\` + 1 WHERE email = ?`, [email], (error, results) => {
+        if (error) {
+          console.error('Database error:', error);
+          return;
+        }
+        console.log('Update successful:', results);
+      });
+
       res.json(marking);
     } else {
       // If the user's answer is incorrect:
+      pool.query(`UPDATE statistic SET total = total + 1 where email = ?`, [email], (error, results) => {
+        if (error) {
+          console.error('Database error:', error);
+          return;
+        }
+        console.log('Update successful:', results);
+      });
       console.log(`User answered ${selectedOption} but the actual answer was ${correction.correct_answer} because ${correction.reason}`)
       const marking = {
         isCorrect: false,
@@ -373,6 +395,32 @@ app.post('/submitAnswer', (req, res) => {
   })
 })
 
+app.post('/statistics', (req, res) => {
+const requestedUser = req.body;
+
+const { email } = requestedUser;
+
+pool.query(`SELECT * FROM statistic WHERE email = ?`, [email], (error, results) => {
+  if (error) {
+    console.error('Database error:', error);
+    return;
+  }
+  console.log(`Fetching ${email}'s statistics...`)
+
+  const stats = results[0]
+  const userStatistics = {
+    socialInfluence: stats[`Social Influence`],
+    biopsychology: stats.Biopsychology,
+    attachment: stats.Attachment,
+    totalAnswered: stats.total
+  }
+
+  console.log(userStatistics)
+  res.json(userStatistics);
+
+})
+
+})
 
 // To ensure express server is running.
 app.listen(port, () => {
