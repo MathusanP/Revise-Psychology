@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revise Psychology</title>
+    <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+    <div class="selection_container">
+        <div id="home" class="flex-center flex-column">
+            <div><h2>Welcome, <span id="nickname"></h2></span></div>   
+            <a class="btn" id="Social Influence"> Social Influence </a>
+            <a class="btn" id="Biopsychology"> Biopsychology </a>
+            <a class="btn" id="Attachment"> Attachment </a>
+            <a class="btn" id="Random"> Random </a>
+            <a class="btn" id="Statistics"> Staistics </a>
+        </div>
+    </div>
+    <script>
+        // Fetching user variables from local storage.
+        const nickname = localStorage.getItem('nickname')
+        const email = localStorage.getItem('email')
+
+        document.getElementById('nickname').textContent = nickname;
+    </script>
+    <script src="session.js"></script>
+</body>
+</html>
