@@ -13,6 +13,7 @@
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.9.3",
     "nodemailer": "^6.9.13",
+    "openai": "^4.38.5",
     "path": "^0.12.7",
     "pg": "^8.11.4",
     "validator": "^13.11.0"

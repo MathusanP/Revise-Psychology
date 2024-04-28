@@ -36,8 +36,32 @@ function fetchQuestion(toSend) {
             });
     });
 }
-
-
+// Fetching a question from the AI
+function fetchAi(toSend) {
+    // Promise that toSend will be fufilled
+    return new Promise((resolve, reject) => {
+        fetch('http://localhost:3000/ai', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(toSend)
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                // Server side error ( Connection Failed )
+                throw new Error('Network response was not ok')
+            })
+            .then(data => {
+                console.log(data);
+                localStorage.setItem('AiQuestion', JSON.stringify(data));
+                // Redirection to question page:
+                window.location.href = "ai.html"
+            })
+    })
+}
 document.addEventListener('DOMContentLoaded', function () {
     // Selecting all the buttons:
     const buttons = document.querySelectorAll('.btn');
@@ -48,15 +72,15 @@ document.addEventListener('DOMContentLoaded', function () {
         button.addEventListener('click', function (event) {
             // Log the clicked button
             console.log(`User has clicked ${event.target.id}`);
-            
+
             // If the user has clicked on the statistic page:
             if (event.target.id == "Statistics") {
                 const email = localStorage.getItem('email');
-                
+
                 var toRequest = {
                     email: email
                 };
-                
+
                 fetch('http://localhost:3000/statistics', { // Removed the extra closing parenthesis here
                     method: 'POST',
                     headers: {
@@ -64,22 +88,33 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     body: JSON.stringify(toRequest)
                 })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    }
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        }
 
-                    console.log(data);
-                    throw new Error('Network response was not ok');
-                })
-                .then(data => {
-                    localStorage.setItem('userStatistics', JSON.stringify(data));
-                    window.location.href = "statistics.html";
-                })
-                .catch(error => {
-                    console.error('There has been an error:', error);
-                });
-            } 
+                        console.log(data);
+                        throw new Error('Network response was not ok');
+                    })
+                    .then(data => {
+                        localStorage.setItem('userStatistics', JSON.stringify(data));
+                        window.location.href = "statistics.html";
+                    })
+                    .catch(error => {
+                        console.error('There has been an error:', error);
+                    });
+            }
+
+            else if (event.target.id == "AI") {
+
+                const email = localStorage.getItem('email')
+
+                var toSend = {
+                    email: email
+                }
+
+                fetchAi(toSend);
+            }
             else {
                 const topic = event.target.id;
 
@@ -188,3 +223,35 @@ nextbtn.addEventListener('click', function () {
         }
     }
 });
+
+markBtn.addEventListener('click', function () {
+    const answer = document.getElementById("answer").value.trim();
+    const ai_data = localStorage.getItem('AiQuestion');
+    const email = localStorage.getItem('email')
+
+    fetch('http://localhost:3000/markAnswer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            userAnswer: answer,
+            question: ai_data,
+            email: email
+        })
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if(data == "1"){
+                localStorage.setItem('mark', "Correct!")
+            } else {
+                console.log(data)
+                localStorage.setItem('mark', data)
+            }
+        })
+})

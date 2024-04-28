@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+    <link rel="stylesheet" href="question.css">
+</head>
+<body>
+    <div class="quiz-container">
+        <div>
+            <h2><span id="question-text"></span></h2>
+        </div>   
+        <textarea id="answer" placeholder="Type your answer here" rows="5"></textarea>
+        <button id="mark-btn">Mark Answer</button>
+        <button id="next-btn">Next Question</button>
+        <p><span id="feedback"></p></div>
+    </div>
+    
+    <script>
+     
+        // Parsing the JSON data from local storage:
+        const ai_data = JSON.parse(localStorage.getItem('AiQuestion'));
+        console.log(ai_data);
+        
+            // Fetching question contents:
+            document.getElementById('question-text').textContent = ai_data.content;
+            const markBtn = document.getElementById("mark-btn");
+            const nextBtn = document.getElementById("next-btn");
+            const userAnswer = document.getElementById("answer");
+
+        const ai_response = localStorage.getItem('mark')
+        const feedback = document.getElementById(ai_response)
+        
+
+    </script>
+
+    <script src="session.js"></script> 
+</body>
+</html>

@@ -9,6 +9,10 @@ const mailPass = process.env.MAIL_PASS
 
 const session_key = process.env.SESSION_KEY
 
+const gptapi_key = process.env.OPENAI_KEY
+const organisationID = process.env.ORG_ID
+const projectID = process.env.PROJECT_ID
+
 // Client side required modules
 const express = require('express');
 const cookieSession = require('cookie-session');
@@ -31,6 +35,16 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const secret_key = crypto.randomBytes(32).toString('hex');
 const path = require('path');
+
+// Chatgpt required modules:
+const OpenAI = require("openai");
+
+// Making a new open ai model configuration:
+const openai = new OpenAI({
+  organization: organisationID,
+  project: projectID,
+  apiKey: gptapi_key
+})
 
 // required for session page:
 const ejs = require('ejs');
@@ -122,6 +136,14 @@ app.post('/userData', (req, res) => {
             res.status(500).send('Error registering new user.');
           }
           sendVerificationEmail(sanitizedSignupEmail, token, res);
+
+          pool.query(`INSERT INTO statistic (email, \`Social Influence\`, \`Biopsychology\`, \`Attachment\`, \`total\`, \`Ai\`) VALUES (?, 0, 0, 0, 0, 0);`, [sanitizedSignupEmail], function (error, results) {
+            if (error) {
+              console.error('Error inserting data onto the statistics table', error);
+              res.status(500).send('Error registering new user.');
+            }
+          });
+          
         });
 
       } else {
@@ -421,6 +443,101 @@ pool.query(`SELECT * FROM statistic WHERE email = ?`, [email], (error, results) 
 })
 
 })
+
+// Ai based questioning:
+app.post('/ai', async (req, res) => {
+  try {
+  const requestedUser = req.body;
+
+  const { email } = requestedUser;
+
+  // Question prompt to give to the ai
+  const question_prompt = "Referring to AQA British A Level Pyschology, write an Exam styled question for any topic, and try to model the question like an actual AQA exam question. Please append the text with the amount of marks this question is worth. Avoid 12 markers and 16 markers.";
+
+
+  // Creating a new GPT chat:
+  const chat_completion = await openai.chat.completions.create({
+    messages: [{role: 'user', content: `${question_prompt}`}],
+    model: `gpt-4-0125-preview`,
+  })
+
+  
+  const reply =  chat_completion.choices[0].message
+
+  console.log(reply)
+  res.json(reply)
+
+
+} catch(error) {
+  console.log("Error fetching chat completion:", error);
+  res.status(500).send("An error occured with the connection to open ai services.")
+}})
+
+app.post('/markAnswer', async (req, res) => {
+  // Retrieving submission from user
+  const question_content = req.body;
+
+  // Destructuring the submission:
+  const { email } = question_content;
+  const { userAnswer } = question_content;
+  const { question } = question_content;
+    
+  console.log(question_content);
+  
+  // Updating user statistics
+  pool.query(`UPDATE statistic SET total = total + 1 where email = ?`, [email], (error, results) => {
+      if (error) {
+        console.error('Database error:', error);
+        return;
+      }
+      console.log('Update successful:', results);
+    });
+
+  try {
+    
+    const markingPrompt = `You are an A level AQA Psychology examiner, a user has submitted their answer to this question: ${question}, here is the user answer ${userAnswer}. You are to strictly follow the following instructions. If the user's answer can be accepted ONLY reply with a 1, if it's incorrect ONLY reply with a 0`
+
+    // Asking chatgpt to mark the question:
+    const chat_completion = await openai.chat.completions.create({
+      messages: [{role: 'user', content: `${markingPrompt}`}],
+      model: `gpt-4-0125-preview`,
+    })
+
+    // Fetching the response:
+    const response = chat_completion.choices[0].message
+    const mark = response.content;
+    console.log(mark);
+
+    // If the question is correct.
+    if(mark == "1") {
+    res.json(`1`);
+    }
+    
+
+    // 0 is if its incorrect.
+    else if(mark == "0") {
+      
+      const feedbackprompt = `You are an A level AQA Psychology examiner, explain how this answer: ${userAnswer} can be improved for this question: ${question}`
+      
+      const chat_completion = await openai.chat.completions.create({
+        messages: [{ role: 'user', content: `${feedbackprompt}`}],
+        model: `gpt-4-0125-preview`,
+      })
+
+      // Sending feedback back to the user:
+      const response = chat_completion.choices[0].message
+      const feedback = response.content;
+      console.log(feedback);
+
+      res.json(feedback)
+    }
+  } catch(error) {  
+    console.log("Error fetching chat completion:", error);
+    res.status(500).send("An error occured with the connection to openai services.")
+  }
+})
+
+
 
 // To ensure express server is running.
 app.listen(port, () => {
